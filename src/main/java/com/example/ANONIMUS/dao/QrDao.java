@@ -13,7 +13,7 @@ import java.io.IOException;
 @Repository
 public class QrDao {
 
-    public byte[] generateQrCode(String text) {
+    public byte[] generateQrCode(Sgit inittring text) {
         try {
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, 200, 200);
