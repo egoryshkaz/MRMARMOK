@@ -1,6 +1,6 @@
 package com.example.ANONIMUS.controller;
 
-import com.example.ANONIMUS.model.QrResponse;
+import com.example.ANONIMUS.dto.QrResponse;
 import com.example.ANONIMUS.service.QrService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

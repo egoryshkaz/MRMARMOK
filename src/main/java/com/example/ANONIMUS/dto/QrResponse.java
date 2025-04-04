@@ -1,4 +1,4 @@
-package com.example.ANONIMUS.model;
+package com.example.ANONIMUS.dto;
 
 public class QrResponse {
     private String qrCode;

@@ -2,7 +2,7 @@ package com.example.ANONIMUS.service;
 
 import com.example.ANONIMUS.dao.QrDao;
 import com.example.ANONIMUS.model.QrEntity;
-import com.example.ANONIMUS.model.QrResponse;
+import com.example.ANONIMUS.dto.QrResponse;
 import com.example.ANONIMUS.model.User;
 import com.example.ANONIMUS.repository.QrRepository;
 import com.example.ANONIMUS.repository.UserRepository;
