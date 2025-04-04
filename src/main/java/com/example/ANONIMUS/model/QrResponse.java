@@ -7,6 +7,7 @@ public class QrResponse {
         this.qrCode = qrCode;
     }
 
+    // Геттеры и сеттеры
     public String getQrCode() {
         return qrCode;
     }

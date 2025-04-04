@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 @RestController
 @RequestMapping("/api/qr")
 public class QrController {
@@ -19,10 +18,14 @@ public class QrController {
     }
 
     @GetMapping
-    public ResponseEntity<QrResponse> generateQrCode(@RequestParam String text) {
-        if (text == null || text.trim().isEmpty()) {
+    public ResponseEntity<QrResponse> generateQrCode(
+            @RequestParam String text,
+            @RequestParam String username) {
+
+        if (text == null || text.trim().isEmpty() || username == null) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(qrService.generateQrCode(text));
+
+        return ResponseEntity.ok(qrService.generateAndSaveQrCode(text, username));
     }
 }
