@@ -1,12 +1,12 @@
 package com.example.ANONIMUS.controller;
 
 import com.example.ANONIMUS.dto.QrResponse;
+import com.example.ANONIMUS.model.QrEntity; // Добавлен импорт
 import com.example.ANONIMUS.service.QrService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import java.util.List; // Добавлен импорт
+
 @RestController
 @RequestMapping("/api/qr")
 public class QrController {
@@ -27,5 +27,12 @@ public class QrController {
         }
 
         return ResponseEntity.ok(qrService.generateAndSaveQrCode(text, username));
+    }
+    @GetMapping("/by-user")
+    public ResponseEntity<List<QrEntity>> getQrCodesByUser(
+            @RequestParam String username) {
+
+        List<QrEntity> qrCodes = qrService.getQrCodesByUsername(username);
+        return ResponseEntity.ok(qrCodes);
     }
 }

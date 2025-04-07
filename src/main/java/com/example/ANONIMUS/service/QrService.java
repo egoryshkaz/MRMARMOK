@@ -1,6 +1,7 @@
 package com.example.ANONIMUS.service;
 
 import com.example.ANONIMUS.dao.QrDao;
+import com.example.ANONIMUS.exceptions.QrGenerationException;
 import com.example.ANONIMUS.model.QrEntity;
 import com.example.ANONIMUS.dto.QrResponse;
 import com.example.ANONIMUS.model.User;
@@ -10,20 +11,27 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.util.Base64;
+import com.example.ANONIMUS.cache.CacheService;
 import java.util.Optional;
+import java.util.List; // Добавлен импорт
 
 @Service
 @Transactional
 @Slf4j
 public class QrService {
+    private static final String QR_CACHE_PREFIX = "qr_";
+
     private final QrDao qrDao;
     private final QrRepository qrRepository;
     private final UserRepository userRepository;
+    private final CacheService cacheService;
 
-    public QrService(QrDao qrDao, QrRepository qrRepository, UserRepository userRepository) {
+    public QrService(QrDao qrDao, QrRepository qrRepository,
+                     UserRepository userRepository, CacheService cacheService) {
         this.qrDao = qrDao;
         this.qrRepository = qrRepository;
         this.userRepository = userRepository;
+        this.cacheService = cacheService;
     }
 
     public QrResponse generateAndSaveQrCode(String text, String username) {
@@ -55,5 +63,35 @@ public class QrService {
             throw new QrGenerationException("Failed to generate QR", e);
         }
     }
+    public QrEntity updateQr(Long id, String newContent) {
+        QrEntity qr = qrRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("QR not found"));
+        qr.setContent(newContent);
+        // Обновите QR-код, если нужно
+        return qrRepository.save(qr);
+    }
 
+    public void deleteQr(Long id) {
+        qrRepository.deleteById(id);
+        cacheService.evict(QR_CACHE_PREFIX + id);
+    }
+    public QrEntity getQrById(Long id) {
+        String cacheKey = QR_CACHE_PREFIX + id;
+        if (cacheService.containsKey(cacheKey)) {
+            return cacheService.get(cacheKey, QrEntity.class);
+        }
+        QrEntity qr = qrRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("QR not found"));
+        cacheService.put(cacheKey, qr);
+        return qr;
+    }
+    public List<QrEntity> getQrCodesByUsername(String username) {
+        String cacheKey = "qr_user_" + username;
+        if (cacheService.containsKey(cacheKey)) {
+            return cacheService.getList(cacheKey, QrEntity.class); // Используем новый метод
+        }
+        List<QrEntity> qrCodes = qrRepository.findByUsername(username);
+        cacheService.put(cacheKey, qrCodes);
+        return qrCodes;
+    }
 }
