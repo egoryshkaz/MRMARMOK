@@ -36,7 +36,7 @@ public class UserService {
     }
 
     public List<User> getAllUsers() {
-        // Для списков кэширование можно реализовать при необходимости
+
         return userRepository.findAll();
     }
 

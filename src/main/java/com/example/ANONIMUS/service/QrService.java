@@ -13,7 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.Base64;
 import com.example.ANONIMUS.cache.CacheService;
 import java.util.Optional;
-import java.util.List; // Добавлен импорт
+import java.util.List;
 
 @Service
 @Transactional
@@ -36,7 +36,7 @@ public class QrService {
 
     public QrResponse generateAndSaveQrCode(String text, String username) {
         try {
-            // Найти или создать пользователя
+
             User user = userRepository.findByUsername(username)
                     .orElseGet(() -> {
                         User newUser = new User();
@@ -44,18 +44,18 @@ public class QrService {
                         return userRepository.save(newUser);
                     });
 
-            // Создать и сохранить QR-код
+
             QrEntity qrEntity = new QrEntity();
             qrEntity.setContent(text);
             byte[] qrCodeBytes = qrDao.generateQrCode(text);
             qrEntity.setQrCodeBase64(Base64.getEncoder().encodeToString(qrCodeBytes));
 
-            // Сохранить QR-код в БД (получить id)
-            qrEntity = qrRepository.save(qrEntity); // Важно: сохранить перед связыванием!
 
-            // Установить связь
+            qrEntity = qrRepository.save(qrEntity);
+
+
             user.getQrCodes().add(qrEntity);
-            userRepository.save(user); // Обновить пользователя
+            userRepository.save(user);
 
             return new QrResponse(qrEntity.getQrCodeBase64());
         } catch (Exception e) {
@@ -67,7 +67,7 @@ public class QrService {
         QrEntity qr = qrRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("QR not found"));
         qr.setContent(newContent);
-        // Обновите QR-код, если нужно
+
         return qrRepository.save(qr);
     }
 
@@ -88,7 +88,7 @@ public class QrService {
     public List<QrEntity> getQrCodesByUsername(String username) {
         String cacheKey = "qr_user_" + username;
         if (cacheService.containsKey(cacheKey)) {
-            return cacheService.getList(cacheKey, QrEntity.class); // Используем новый метод
+            return cacheService.getList(cacheKey, QrEntity.class);
         }
         List<QrEntity> qrCodes = qrRepository.findByUsername(username);
         cacheService.put(cacheKey, qrCodes);

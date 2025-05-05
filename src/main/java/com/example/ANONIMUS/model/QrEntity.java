@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "qr_codes") // Явное указание имени таблицы
+@Table(name = "qr_codes")
 public class QrEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
