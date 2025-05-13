@@ -1,4 +1,4 @@
-package com.example.ANONIMUS.aop;
+package com.example.ANONIMUS.aspect;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.*;
