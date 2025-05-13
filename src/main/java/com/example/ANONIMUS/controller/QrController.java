@@ -5,7 +5,9 @@ import com.example.ANONIMUS.model.QrEntity; // Добавлен импорт
 import com.example.ANONIMUS.service.QrService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List; // Добавлен импорт
+import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 @RestController
 @RequestMapping("/api/qr")
@@ -18,6 +20,9 @@ public class QrController {
     }
 
     @GetMapping
+    @Operation(summary = "Generate QR code", description = "Creates QR code from text")
+    @ApiResponse(responseCode = "200", description = "QR generated successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid input parameters")
     public ResponseEntity<QrResponse> generateQrCode(
             @RequestParam String text,
             @RequestParam String username) {

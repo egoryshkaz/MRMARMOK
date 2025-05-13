@@ -1,7 +1,6 @@
 package com.example.ANONIMUS.service;
 
 import com.example.ANONIMUS.dao.QrDao;
-import com.example.ANONIMUS.exceptions.QrGenerationException;
 import com.example.ANONIMUS.model.QrEntity;
 import com.example.ANONIMUS.dto.QrResponse;
 import com.example.ANONIMUS.model.User;
@@ -12,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.util.Base64;
 import com.example.ANONIMUS.cache.CacheService;
-import java.util.Optional;
+
 import java.util.List;
 
 @Service
@@ -35,8 +34,6 @@ public class QrService {
     }
 
     public QrResponse generateAndSaveQrCode(String text, String username) {
-        try {
-
             User user = userRepository.findByUsername(username)
                     .orElseGet(() -> {
                         User newUser = new User();
@@ -58,10 +55,6 @@ public class QrService {
             userRepository.save(user);
 
             return new QrResponse(qrEntity.getQrCodeBase64());
-        } catch (Exception e) {
-            log.error("Error generating QR code", e);
-            throw new QrGenerationException("Failed to generate QR", e);
-        }
     }
     public QrEntity updateQr(Long id, String newContent) {
         QrEntity qr = qrRepository.findById(id)
