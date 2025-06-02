@@ -21,11 +21,12 @@ public class LoggingAspect {
                 joinPoint.getSignature().getName());
     }
 
-    @AfterThrowing(pointcut = "controllerPointcut()", throwing = "e")
-    public void logAfterThrowing(JoinPoint joinPoint, Throwable e) {
-        logger.error("Exception in {}.{}(): {}",
+    @AfterReturning(pointcut = "controllerPointcut()", returning = "result")
+    public void logAfterReturning(JoinPoint joinPoint, Object result) {
+        logger.info("Exit: {}.{}() with result = {}",
                 joinPoint.getSignature().getDeclaringTypeName(),
                 joinPoint.getSignature().getName(),
-                e.getMessage());
+                result);
     }
+
 }

@@ -36,8 +36,13 @@ public class UserService {
     }
 
     public List<User> getAllUsers() {
-
-        return userRepository.findAll();
+        String cacheKey = "all_users";
+        if (cacheService.containsKey(cacheKey)) {
+            return cacheService.getList(cacheKey, User.class);
+        }
+        List<User> users = userRepository.findAll();
+        cacheService.put(cacheKey, users);
+        return users;
     }
 
     public User updateUser(Long id, User userDetails) {

@@ -41,6 +41,9 @@ public class QrService {
 
     // Single QR generation remains the same
     public QrResponse generateAndSaveQrCode(String text, String username) {
+        if (text == null || text.trim().isEmpty() || username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Text and username must not be empty");
+        }
         User user = findOrCreateUser(username);
         QrEntity qrEntity = createAndSaveQrEntity(text, user);
         return new QrResponse(qrEntity.getQrCodeBase64());
