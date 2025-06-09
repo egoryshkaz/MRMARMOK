@@ -66,12 +66,12 @@ public class QrController {
                                         req.getUsername() == null || req.getUsername().trim().isEmpty()) {
                                     return BulkQrResult.failure(req.getText(), req.getUsername(), "Invalid text or username");
                                 }
-                                return null; // Placeholder for valid items, will be processed by service
+                                return null;
                             })
-                            .filter(result -> result != null) // Only keep the failure markers for the response
-                            .collect(Collectors.toList()) // Or handle differently depending on desired error reporting
+                            .filter(result -> result != null)
+                            .collect(Collectors.toList())
             );
-            // Consider a more granular error response if needed
+
         }
 
 
@@ -83,17 +83,14 @@ public class QrController {
     @GetMapping("/by-user")
     @Operation(summary = "Get QR codes by username", description = "Retrieves all QR codes associated with a specific username")
     @ApiResponse(responseCode = "200", description = "QR codes retrieved successfully")
-    @ApiResponse(responseCode = "404", description = "User not found or no QR codes associated") // Assuming service handles this
+    @ApiResponse(responseCode = "404", description = "User not found or no QR codes associated")
     public ResponseEntity<List<QrEntity>> getQrCodesByUser(
             @RequestParam String username) {
         if (username == null || username.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
         List<QrEntity> qrCodes = qrService.getQrCodesByUsername(username);
-        // Decide if an empty list warrants a 404 or just an empty 200
-        // if (qrCodes.isEmpty()) {
-        //     return ResponseEntity.notFound().build();
-        // }
+
         return ResponseEntity.ok(qrCodes);
     }
     @Autowired

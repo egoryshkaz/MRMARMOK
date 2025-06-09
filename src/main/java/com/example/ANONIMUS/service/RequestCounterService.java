@@ -8,12 +8,12 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RequestCounterService {
     private final AtomicLong counter = new AtomicLong(0);
 
-    // Синхронизированный метод для инкремента
+
     public synchronized void increment() {
         counter.incrementAndGet();
     }
 
-    // Синхронизированный метод для получения значения
+
     public synchronized long getCount() {
         return counter.get();
     }

@@ -1,4 +1,4 @@
-// src/main/components/QrList.js
+
 import React from 'react';
 
 function QrList({ qrCodes }) {

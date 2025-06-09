@@ -1,4 +1,4 @@
-// src/main/components/QrGenerator.js
+
 import React, { useState } from 'react';
 import ApiService from '../services/ApiService';
 

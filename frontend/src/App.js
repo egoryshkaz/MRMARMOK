@@ -1,4 +1,4 @@
-// src/main/App.js
+
 import React, { useState } from 'react';
 import UserList from './components/UserList';
 import UserForm from './components/UserForm';
@@ -32,7 +32,7 @@ function App() {
         try {
             await ApiService.createUser(userData);
             setShowCreateForm(false);
-            setRefreshFlag(!refreshFlag); // Обновляем список пользователей
+            setRefreshFlag(!refreshFlag);
         } catch (error) {
             console.error('Error creating user:', error);
         }
@@ -43,7 +43,7 @@ function App() {
             await ApiService.updateUser(selectedUser.id, userData);
             setEditUser(null);
             setSelectedUser({ ...selectedUser, ...userData });
-            setRefreshFlag(!refreshFlag); // Обновляем список
+            setRefreshFlag(!refreshFlag);
         } catch (error) {
             console.error('Error updating user:', error);
         }
@@ -78,7 +78,6 @@ function App() {
                 )}
             </div>
 
-            {/* Основное содержимое: детали пользователя, QR-коды и операции с пользователем */}
             <div style={{ flexGrow: 1 }}>
                 {selectedUser ? (
                     <>

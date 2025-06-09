@@ -6,7 +6,7 @@ public class BulkQrResult {
     private String inputText;
     private String inputUsername;
     private String qrCodeBase64;
-    private String error; // Optional: To indicate errors if needed
+    private String error;
 
     public BulkQrResult() {
     }
