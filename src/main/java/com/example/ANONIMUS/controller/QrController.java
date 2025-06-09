@@ -6,8 +6,10 @@ import com.example.ANONIMUS.dto.QrGenerationRequest;
 import com.example.ANONIMUS.dto.QrResponse;
 import com.example.ANONIMUS.model.QrEntity;
 import com.example.ANONIMUS.service.QrService;
+import com.example.ANONIMUS.service.RequestCounterService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -93,5 +95,20 @@ public class QrController {
         //     return ResponseEntity.notFound().build();
         // }
         return ResponseEntity.ok(qrCodes);
+    }
+    @Autowired
+    private RequestCounterService requestCounterService;
+
+    @GetMapping("/request-count")
+    @Operation(summary = "Get request count", description = "Returns total number of requests handled")
+    public ResponseEntity<Long> getRequestCount() {
+        return ResponseEntity.ok(requestCounterService.getCount());
+    }
+
+    @PostMapping("/reset-count")
+    @Operation(summary = "Reset request count", description = "Resets the request counter to zero")
+    public ResponseEntity<Void> resetRequestCount() {
+        requestCounterService.reset();
+        return ResponseEntity.noContent().build();
     }
 }

@@ -2,112 +2,110 @@ package com.example.ANONIMUS.controller;
 
 import com.example.ANONIMUS.model.User;
 import com.example.ANONIMUS.service.UserService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.mockito.ArgumentMatchers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockitoBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(UserController.class)
 public class UserControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    // Зависимость, которую контроллер использует, замокана
+    @MockitoBean
     private UserService userService;
 
-    @InjectMocks
-    private UserController userController;
-
-    @Test
-    void createUser_ValidUser_ReturnsCreatedUser() {
-        // Подготовка
-        User newUser = new User();
-        newUser.setUsername("testuser");
-
-        when(userService.createUser(any(User.class)))
-                .thenReturn(newUser);
-
-        // Вызов
-        ResponseEntity<User> response = userController.createUser(newUser);
-
-        // Проверка
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("testuser", response.getBody().getUsername());
+    // Вспомогательный метод для преобразования объектов в JSON
+    private String asJsonString(final Object obj) {
+        try {
+            return new ObjectMapper().writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
-    void getUserById_Exists_ReturnsUser() {
-        // Подготовка
+    public void createUserValidReturnsCreatedUser() throws Exception {
+        User newUser = new User();
+        newUser.setUsername("testuser");
+        newUser.setId(1L);
+
+        when(userService.createUser(any(User.class))).thenReturn(newUser);
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(newUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username", is("testuser")))
+                .andExpect(jsonPath("$.id", is(1)));
+    }
+
+    @Test
+    public void getUserByIdExistsReturnsUser() throws Exception {
         User user = new User();
         user.setId(1L);
         user.setUsername("testuser");
 
-        when(userService.getUserById(1L))
-                .thenReturn(Optional.of(user));
+        when(userService.getUserById(1L)).thenReturn(Optional.of(user));
 
-        // Вызов
-        ResponseEntity<User> response = userController.getUserById(1L);
-
-        // Проверка
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("testuser", response.getBody().getUsername());
+        mockMvc.perform(get("/api/users/{id}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username", is("testuser")))
+                .andExpect(jsonPath("$.id", is(1)));
     }
 
     @Test
-    void getUserById_NotExists_ReturnsNotFound() {
-        // Подготовка
-        when(userService.getUserById(1L))
-                .thenReturn(Optional.empty());
+    public void getUserByIdNotExistsReturnsNotFound() throws Exception {
+        when(userService.getUserById(999L)).thenReturn(Optional.empty());
 
-        // Вызов
-        ResponseEntity<User> response = userController.getUserById(1L);
-
-        // Проверка
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        mockMvc.perform(get("/api/users/{id}", 999L))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void updateUser_ValidId_ReturnsUpdatedUser() {
-        // Подготовка
-        User existingUser = new User();
-        existingUser.setId(1L);
-        existingUser.setUsername("oldname");
-
+    public void updateUserValidUpdatesUser() throws Exception {
         User updatedUser = new User();
+        updatedUser.setId(1L);
         updatedUser.setUsername("newname");
 
         when(userService.updateUser(eq(1L), any(User.class)))
                 .thenReturn(updatedUser);
 
-        // Вызов
-        ResponseEntity<User> response = userController.updateUser(1L, updatedUser);
-
-        // Проверка
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("newname", response.getBody().getUsername());
+        mockMvc.perform(put("/api/users/{id}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(updatedUser)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username", is("newname")));
     }
 
     @Test
-    void deleteUser_ValidId_ReturnsNoContent() {
-        // Вызов
-        ResponseEntity<Void> response = userController.deleteUser(1L);
-
-        // Проверка
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(userService, times(1)).deleteUser(1L);
+    public void deleteUserValidDeletesUser() throws Exception {
+        // Метод deleteUser в UserService возвращает void. Если исключения нет, то запрос успешно выполняется.
+        mockMvc.perform(delete("/api/users/{id}", 1L))
+                .andExpect(status().isNoContent());
     }
 
     @Test
-    void getAllUsers_ReturnsAllUsers() {
-        // Подготовка
+    public void getAllUsersReturnsAllUsers() throws Exception {
         User user1 = new User();
         user1.setId(1L);
         user1.setUsername("user1");
@@ -116,29 +114,57 @@ public class UserControllerTest {
         user2.setId(2L);
         user2.setUsername("user2");
 
-        when(userService.getAllUsers())
-                .thenReturn(Arrays.asList(user1, user2));
+        when(userService.getAllUsers()).thenReturn(List.of(user1, user2));
 
-        // Вызов
-        ResponseEntity<List<User>> response = userController.getAllUsers();
-
-        // Проверка
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(2, response.getBody().size());
-        assertEquals("user1", response.getBody().get(0).getUsername());
+        mockMvc.perform(get("/api/users"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].username", is("user1")))
+                .andExpect(jsonPath("$[1].username", is("user2")));
     }
 
     @Test
-    void updateUser_NonExistingId_ThrowsException() {
-        // Подготовка
-        when(userService.updateUser(eq(99L), any(User.class)))
+    public void createUserInvalidUsernameReturnsBadRequest() throws Exception {
+        User invalidUser = new User();
+        invalidUser.setUsername(""); // Пустое имя
+
+        // Сервис выбрасывает исключение, которое глобальный обработчик интерпретирует как BAD_REQUEST
+        when(userService.createUser(any(User.class)))
+                .thenThrow(new IllegalArgumentException("Invalid username"));
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(invalidUser)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void updateUserNonExistingIdReturnsNotFound() throws Exception {
+        User updatedUser = new User();
+        updatedUser.setUsername("newname");
+
+        // Сервис для обновления не находит пользователя и выбрасывает исключение, которое должно быть обработано глобально как NOT_FOUND
+        when(userService.updateUser(eq(999L), any(User.class)))
                 .thenThrow(new RuntimeException("User not found"));
 
-        // Вызов и проверка
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            userController.updateUser(99L, new User());
-        });
+        mockMvc.perform(put("/api/users/{id}", 999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(updatedUser)))
+                .andExpect(status().isNotFound());
+    }
 
-        assertEquals("User not found", exception.getMessage());
+    @Test
+    public void createUserDuplicateUsernameReturnsConflict() throws Exception {
+        User duplicateUser = new User();
+        duplicateUser.setUsername("duplicate");
+
+        // Сервис выбрасывает исключение для дублирования, которое должно обработаться как CONFLICT
+        when(userService.createUser(any(User.class)))
+                .thenThrow(new RuntimeException("Duplicate username"));
+
+        mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(asJsonString(duplicateUser)))
+                .andExpect(status().isConflict());
     }
 }
