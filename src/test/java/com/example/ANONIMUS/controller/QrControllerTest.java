@@ -14,11 +14,11 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -33,7 +33,6 @@ public class QrControllerTest {
     @MockBean
     private QrService qrService;
 
-    // Вспомогательный метод для преобразования объектов в JSON
     private String asJsonString(final Object obj) {
         try {
             return new ObjectMapper().writeValueAsString(obj);
@@ -44,7 +43,9 @@ public class QrControllerTest {
 
     @Test
     public void generateQrCodeValidRequestReturnsOk() throws Exception {
-        QrResponse qrResponse = new QrResponse("dummyQrCodeBase64");
+        // Создаём объект QrResponse через мок
+        QrResponse qrResponse = mock(QrResponse.class);
+        when(qrResponse.getQrCode()).thenReturn("dummyQrCodeBase64");
         when(qrService.generateAndSaveQrCode("test", "testuser")).thenReturn(qrResponse);
 
         mockMvc.perform(get("/api/qr")
@@ -56,7 +57,6 @@ public class QrControllerTest {
 
     @Test
     public void generateQrCodeInvalidRequestReturnsBadRequest() throws Exception {
-        // При пустых параметрах контроллер должен вернуть ошибку 400
         mockMvc.perform(get("/api/qr")
                         .param("text", "")
                         .param("username", ""))
@@ -65,21 +65,25 @@ public class QrControllerTest {
 
     @Test
     public void generateBulkQrCodesValidRequestReturnsOk() throws Exception {
-        BulkQrRequest request = new BulkQrRequest();
-        request.setRequests(List.of(
-                new QrGenerationRequest("text1", "testuser"),
-                new QrGenerationRequest("text2", "testuser")
-        ));
+        BulkQrRequest bulkRequest = mock(BulkQrRequest.class);
+        QrGenerationRequest qrGenReq1 = mock(QrGenerationRequest.class);
+        QrGenerationRequest qrGenReq2 = mock(QrGenerationRequest.class);
+        when(qrGenReq1.getText()).thenReturn("text1");
+        when(qrGenReq1.getUsername()).thenReturn("testuser");
+        when(qrGenReq2.getText()).thenReturn("text2");
+        when(qrGenReq2.getUsername()).thenReturn("testuser");
+        when(bulkRequest.getRequests()).thenReturn(List.of(qrGenReq1, qrGenReq2));
 
-        // Подготовка мокированного ответа для bulk операции
-        List<BulkQrResult> results = new ArrayList<>();
-        results.add(BulkQrResult.success("text1", "testuser", "qrCode1"));
-        results.add(BulkQrResult.success("text2", "testuser", "qrCode2"));
+        BulkQrResult bulkResult1 = mock(BulkQrResult.class);
+        BulkQrResult bulkResult2 = mock(BulkQrResult.class);
+        when(bulkResult1.getQrCodeBase64()).thenReturn("qrCode1");
+        when(bulkResult2.getQrCodeBase64()).thenReturn("qrCode2");
+        List<BulkQrResult> results = List.of(bulkResult1, bulkResult2);
         when(qrService.generateBulkQrCodes(any())).thenReturn(results);
 
         mockMvc.perform(post("/api/qr/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(request)))
+                        .content(asJsonString(bulkRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].qrCodeBase64", is("qrCode1")));
@@ -87,48 +91,52 @@ public class QrControllerTest {
 
     @Test
     public void generateBulkQrCodesInvalidRequestReturnsBadRequest() throws Exception {
-        // Пустой список запросов должен приводить к возврату ошибки 400
-        BulkQrRequest request = new BulkQrRequest();
-        request.setRequests(List.of());
+        // Здесь объект BulkQrRequest возвращает пустой список через мок
+        BulkQrRequest bulkRequest = mock(BulkQrRequest.class);
+        when(bulkRequest.getRequests()).thenReturn(List.of());
 
         mockMvc.perform(post("/api/qr/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(request)))
+                        .content(asJsonString(bulkRequest)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     public void generateBulkQrCodesWithInvalidItemReturnsOkWithMixedResults() throws Exception {
-        BulkQrRequest request = new BulkQrRequest();
-        request.setRequests(List.of(
-                new QrGenerationRequest("valid", "testuser"),
-                new QrGenerationRequest("", "")
-        ));
+        BulkQrRequest bulkRequest = mock(BulkQrRequest.class);
+        QrGenerationRequest validReq = mock(QrGenerationRequest.class);
+        QrGenerationRequest invalidReq = mock(QrGenerationRequest.class);
+        when(validReq.getText()).thenReturn("valid");
+        when(validReq.getUsername()).thenReturn("testuser");
+        when(invalidReq.getText()).thenReturn("");
+        when(invalidReq.getUsername()).thenReturn("");
+        when(bulkRequest.getRequests()).thenReturn(List.of(validReq, invalidReq));
 
-        List<BulkQrResult> results = new ArrayList<>();
-        results.add(BulkQrResult.success("valid", "testuser", "qrCodeValid"));
-        results.add(BulkQrResult.failure("", "", "Invalid text or username"));
+        BulkQrResult successResult = mock(BulkQrResult.class);
+        BulkQrResult failureResult = mock(BulkQrResult.class);
+        when(successResult.getQrCodeBase64()).thenReturn("qrCodeValid");
+        when(failureResult.getError()).thenReturn("Invalid text or username");
+        List<BulkQrResult> results = List.of(successResult, failureResult);
         when(qrService.generateBulkQrCodes(any())).thenReturn(results);
 
         mockMvc.perform(post("/api/qr/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(asJsonString(request)))
+                        .content(asJsonString(bulkRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].error").doesNotExist())
+                .andExpect(jsonPath("$[0].error", not(exists())))
                 .andExpect(jsonPath("$[1].error", is("Invalid text or username")));
     }
 
     @Test
     public void getQrCodesByUserValidUserReturnsQrCodes() throws Exception {
-        // Подготовка мока для возврата списка QR-кодов по username
-        List<QrEntity> qrCodes = new ArrayList<>();
-        QrEntity code1 = new QrEntity();
-        code1.setContent("first");
-        QrEntity code2 = new QrEntity();
-        code2.setContent("second");
-        qrCodes.add(code1);
-        qrCodes.add(code2);
+        // Создаём моки для QR-кодов
+        QrEntity code1 = mock(QrEntity.class);
+        QrEntity code2 = mock(QrEntity.class);
+        when(code1.getContent()).thenReturn("first");
+        when(code2.getContent()).thenReturn("second");
+        List<QrEntity> qrCodes = List.of(code1, code2);
+
         when(qrService.getQrCodesByUsername("testuser")).thenReturn(qrCodes);
 
         mockMvc.perform(get("/api/qr/by-user")

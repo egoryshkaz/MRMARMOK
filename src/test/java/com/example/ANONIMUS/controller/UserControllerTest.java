@@ -4,10 +4,9 @@ import com.example.ANONIMUS.model.User;
 import com.example.ANONIMUS.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockitoBean;
+import org.springframework.boot.test.mock.mockito.MockBean;  // Обратите внимание, используем @MockBean
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,6 +16,7 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -30,8 +30,7 @@ public class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    // Зависимость, которую контроллер использует, замокана
-    @MockitoBean
+    @MockBean
     private UserService userService;
 
     // Вспомогательный метод для преобразования объектов в JSON
@@ -45,9 +44,10 @@ public class UserControllerTest {
 
     @Test
     public void createUserValidReturnsCreatedUser() throws Exception {
-        User newUser = new User();
-        newUser.setUsername("testuser");
-        newUser.setId(1L);
+        // Создаём моки для пользователя, вместо new User()
+        User newUser = mock(User.class);
+        when(newUser.getUsername()).thenReturn("testuser");
+        when(newUser.getId()).thenReturn(1L);
 
         when(userService.createUser(any(User.class))).thenReturn(newUser);
 
@@ -61,9 +61,9 @@ public class UserControllerTest {
 
     @Test
     public void getUserByIdExistsReturnsUser() throws Exception {
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("testuser");
+        User user = mock(User.class);
+        when(user.getId()).thenReturn(1L);
+        when(user.getUsername()).thenReturn("testuser");
 
         when(userService.getUserById(1L)).thenReturn(Optional.of(user));
 
@@ -83,12 +83,11 @@ public class UserControllerTest {
 
     @Test
     public void updateUserValidUpdatesUser() throws Exception {
-        User updatedUser = new User();
-        updatedUser.setId(1L);
-        updatedUser.setUsername("newname");
+        User updatedUser = mock(User.class);
+        when(updatedUser.getUsername()).thenReturn("newname");
+        when(updatedUser.getId()).thenReturn(1L);
 
-        when(userService.updateUser(eq(1L), any(User.class)))
-                .thenReturn(updatedUser);
+        when(userService.updateUser(eq(1L), any(User.class))).thenReturn(updatedUser);
 
         mockMvc.perform(put("/api/users/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -99,20 +98,20 @@ public class UserControllerTest {
 
     @Test
     public void deleteUserValidDeletesUser() throws Exception {
-        // Метод deleteUser в UserService возвращает void. Если исключения нет, то запрос успешно выполняется.
+
         mockMvc.perform(delete("/api/users/{id}", 1L))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     public void getAllUsersReturnsAllUsers() throws Exception {
-        User user1 = new User();
-        user1.setId(1L);
-        user1.setUsername("user1");
+        User user1 = mock(User.class);
+        when(user1.getId()).thenReturn(1L);
+        when(user1.getUsername()).thenReturn("user1");
 
-        User user2 = new User();
-        user2.setId(2L);
-        user2.setUsername("user2");
+        User user2 = mock(User.class);
+        when(user2.getId()).thenReturn(2L);
+        when(user2.getUsername()).thenReturn("user2");
 
         when(userService.getAllUsers()).thenReturn(List.of(user1, user2));
 
@@ -125,8 +124,9 @@ public class UserControllerTest {
 
     @Test
     public void createUserInvalidUsernameReturnsBadRequest() throws Exception {
-        User invalidUser = new User();
-        invalidUser.setUsername(""); // Пустое имя
+        User invalidUser = mock(User.class);
+        // Пустое имя, как требовалось
+        when(invalidUser.getUsername()).thenReturn("");
 
         // Сервис выбрасывает исключение, которое глобальный обработчик интерпретирует как BAD_REQUEST
         when(userService.createUser(any(User.class)))
@@ -140,10 +140,10 @@ public class UserControllerTest {
 
     @Test
     public void updateUserNonExistingIdReturnsNotFound() throws Exception {
-        User updatedUser = new User();
-        updatedUser.setUsername("newname");
+        User updatedUser = mock(User.class);
+        when(updatedUser.getUsername()).thenReturn("newname");
 
-        // Сервис для обновления не находит пользователя и выбрасывает исключение, которое должно быть обработано глобально как NOT_FOUND
+        // Сервис не находит пользователя и выбрасывает исключение (будет обработано как NOT_FOUND)
         when(userService.updateUser(eq(999L), any(User.class)))
                 .thenThrow(new RuntimeException("User not found"));
 
@@ -155,10 +155,9 @@ public class UserControllerTest {
 
     @Test
     public void createUserDuplicateUsernameReturnsConflict() throws Exception {
-        User duplicateUser = new User();
-        duplicateUser.setUsername("duplicate");
+        User duplicateUser = mock(User.class);
+        when(duplicateUser.getUsername()).thenReturn("duplicate");
 
-        // Сервис выбрасывает исключение для дублирования, которое должно обработаться как CONFLICT
         when(userService.createUser(any(User.class)))
                 .thenThrow(new RuntimeException("Duplicate username"));
 
@@ -166,5 +165,25 @@ public class UserControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(asJsonString(duplicateUser)))
                 .andExpect(status().isConflict());
+    }
+
+
+
+    @Test
+    public void getUserByIdNullParameterReturnsNotFound() throws Exception {
+        // Если id равен 0, считаем, что пользователь не найден
+        when(userService.getUserById(0L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/users/{id}", 0L))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void deleteUserNonExistingIdReturnsNotFound() throws Exception {
+        // Допустим, при удалении несуществующего пользователя сервис выбрасывает исключение
+        when(userService.deleteUser(eq(999L))).thenThrow(new RuntimeException("User not found"));
+
+        mockMvc.perform(delete("/api/users/{id}", 999L))
+                .andExpect(status().isNotFound());
     }
 }
